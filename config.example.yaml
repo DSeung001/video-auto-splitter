@@ -1,0 +1,37 @@
+audio:
+  sample_rate: 16000
+  window_sec: 2.0
+  hop_sec: 1.0
+  absolute_quiet_db: -38.0
+  absolute_margin_db: 8.0
+  relative_drop_db: 12.0
+  quiet_score_threshold: 0.65
+  merge_gap_sec: 20.0
+
+video:
+  sample_interval_sec: 2.0
+  static_diff_threshold: 4.0
+  static_score_threshold: 0.65
+  min_static_duration_sec: 120.0
+
+break_detection:
+  min_break_duration_sec: 180.0
+  max_break_duration_sec: 1800.0
+  min_lesson_duration_sec: 900.0
+  ignore_break_before_sec: 600.0
+  trim_margin_before_break_sec: 5.0
+  trim_margin_after_break_sec: 5.0
+  merge_break_gap_sec: 20.0
+  max_point_gap_sec: 3.0
+
+scoring:
+  audio_weight: 0.7
+  video_weight: 0.3
+  break_score_threshold: 0.65
+
+split:
+  # Safer default to avoid boundary corruption and codec/container mismatch.
+  default_copy_mode: false
+  verify_output_with_ffprobe: true
+  verify_decode_with_ffmpeg: true
+  min_valid_duration_sec: 1.0
