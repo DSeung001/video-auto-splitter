@@ -40,6 +40,28 @@ python auto_split.py input/class_recording.webm --config config.yaml --dry-run
 python auto_split.py input/class_recording.mp4 --config config.yaml --output output/class_recording
 ```
 
+## GUI로 실행하기
+
+CLI 인자를 몰라도 되도록 설정용 GUI(Tkinter, 표준 라이브러리)를 제공합니다.
+
+```bash
+# 명시적으로 GUI 실행
+python auto_split.py --gui
+
+# 아무 인자 없이 실행해도 자동으로 GUI가 뜹니다
+python auto_split.py
+```
+
+GUI에서 할 수 있는 것:
+
+- 입력 파일 / 출력 디렉터리 / config 파일 경로를 파일 다이얼로그로 선택
+- 프리셋(balanced/sensitive/strict), 모드(copy/accurate), dry-run 여부 선택
+- 무음/화면정지 임계값, 쉬는시간 길이, break 점수 임계값 등 주요 설정값을 화면에서 편집하고 "설정 저장"으로 config YAML에 반영
+- "실행" 버튼으로 파이프라인을 백그라운드에서 실행하고, 진행 로그를 화면에서 확인
+
+> Linux에서 `ModuleNotFoundError: No module named 'tkinter'` 오류가 나면 시스템 패키지
+> `python3-tk`(Debian/Ubuntu) 또는 `python3-tkinter`(Fedora) 를 설치하세요.
+
 ## 설정파일 세팅 기능
 
 CLI에서 설정 템플릿을 생성할 수 있습니다.
@@ -80,6 +102,7 @@ python auto_split.py --init-config config.yaml --force
 ```bash
 ./dist/lecture-auto-splitter --init-config
 ./dist/lecture-auto-splitter input/sample.webm --config config.yaml --dry-run
+./dist/lecture-auto-splitter --gui
 ```
 
 ## 다운로드해서 실행하기 (GitHub Actions 아티팩트)
@@ -111,6 +134,7 @@ Windows:
 - `--accurate`: 재인코딩 모드 (느리지만 컷 경계/호환성 유리)
 - `--config`: YAML 설정 파일 경로
 - `--output`: 출력 디렉터리
+- `--gui`: 설정/실행용 GUI 실행
 
 > WEBM 입력은 기본적으로 copy를 먼저 시도하고, 분리/검증 실패 시 해당 파트만 accurate로 자동 재시도합니다.
 

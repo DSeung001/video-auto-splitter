@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
 
@@ -193,6 +193,24 @@ def write_config_template(path: str, *, preset: str = "balanced", overwrite: boo
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     payload = _deep_merge(DEFAULT_CONFIG, PRESET_OVERRIDES[preset])
+    output_path.write_text(
+        yaml.safe_dump(payload, sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+    return output_path
+
+
+def save_config(path: str, config: AppConfig) -> Path:
+    """Serialize an AppConfig (e.g. edited via the GUI) to a YAML file."""
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "audio": asdict(config.audio),
+        "video": asdict(config.video),
+        "break_detection": asdict(config.break_detection),
+        "scoring": asdict(config.scoring),
+        "split": asdict(config.split),
+    }
     output_path.write_text(
         yaml.safe_dump(payload, sort_keys=False, allow_unicode=True),
         encoding="utf-8",

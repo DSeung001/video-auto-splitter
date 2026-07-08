@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
-from lecture_splitter.config import load_config, write_config_template
+from lecture_splitter.config import load_config, save_config, write_config_template
 
 
 def test_load_config_without_path_uses_defaults() -> None:
@@ -29,3 +30,21 @@ def test_write_config_template_respects_overwrite_flag(tmp_path: Path) -> None:
     write_config_template(str(config_path), overwrite=False)
     with pytest.raises(FileExistsError):
         write_config_template(str(config_path), overwrite=False)
+
+
+def test_save_config_round_trips_edited_values(tmp_path: Path) -> None:
+    config_path = tmp_path / "edited.yaml"
+    config = load_config(None)
+    edited = replace(
+        config,
+        audio=replace(config.audio, absolute_quiet_db=-30.0),
+        scoring=replace(config.scoring, break_score_threshold=0.5),
+    )
+
+    save_config(str(config_path), edited)
+    reloaded = load_config(str(config_path))
+
+    assert reloaded.audio.absolute_quiet_db == pytest.approx(-30.0)
+    assert reloaded.scoring.break_score_threshold == pytest.approx(0.5)
+    # Untouched sections should still match the original defaults.
+    assert reloaded.video.static_diff_threshold == pytest.approx(config.video.static_diff_threshold)
