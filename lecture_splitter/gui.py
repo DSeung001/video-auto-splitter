@@ -7,8 +7,8 @@ YAML config file, and run the split pipeline without touching the CLI.
 from __future__ import annotations
 
 import contextlib
-import io
 import queue
+import tempfile
 import threading
 import tkinter as tk
 from pathlib import Path
@@ -164,8 +164,9 @@ class LectureSplitterGUI:
 
         config = self._config
         updates: dict[str, dict] = {}
-        for (_label, section, attr, cast), (key, var) in zip(FIELD_SPECS, self._field_vars.items()):
-            updates.setdefault(section, {})[attr] = cast(var.get())
+        for _label, section, attr, cast in FIELD_SPECS:
+            key = f"{section}.{attr}"
+            updates.setdefault(section, {})[attr] = cast(self._field_vars[key].get())
 
         for section, values in updates.items():
             current_section = getattr(config, section)
@@ -196,10 +197,31 @@ class LectureSplitterGUI:
             messagebox.showwarning("경고", "입력 파일을 선택하세요.")
             return
 
+        try:
+            config = self._collect_config_from_fields()
+        except ValueError as exc:
+            messagebox.showerror("입력 오류", f"설정값 입력이 올바르지 않습니다:\n{exc}")
+            return
+
+        # Persist whatever is currently in the fields before running, so the
+        # pipeline always sees the values shown on screen even if the user
+        # forgot to click "설정 저장" first.
         config_path = self.config_var.get().strip() or None
-        if config_path and not Path(config_path).exists():
-            self._save_settings()
-            if not Path(config_path).exists():
+        if config_path:
+            try:
+                save_config(config_path, config)
+                self._config = config
+            except Exception as exc:  # noqa: BLE001 - surface to user
+                messagebox.showerror("저장 실패", f"실행 전 설정을 저장하는 중 오류가 발생했습니다:\n{exc}")
+                return
+        else:
+            try:
+                temp_config_path = Path(tempfile.gettempdir()) / "lecture_splitter_temp_config.yaml"
+                save_config(str(temp_config_path), config)
+                config_path = str(temp_config_path)
+                self._config = config
+            except Exception as exc:  # noqa: BLE001 - surface to user
+                messagebox.showerror("임시 설정 저장 실패", f"임시 설정을 저장하는 중 오류가 발생했습니다:\n{exc}")
                 return
 
         output_path = self.output_var.get().strip() or None
@@ -221,15 +243,33 @@ class LectureSplitterGUI:
         thread.start()
 
     def _run_pipeline_thread(self, args: SimpleNamespace) -> None:
-        buffer = io.StringIO()
+        class _QueueWriter:
+            """File-like object that streams writes into the log queue.
+
+            Using this instead of buffering into an io.StringIO lets the UI
+            display log lines as they happen instead of all at once when the
+            pipeline finishes.
+            """
+
+            def __init__(self, log_queue: "queue.Queue[str]") -> None:
+                self._queue = log_queue
+
+            def write(self, text: str) -> int:
+                if text:
+                    self._queue.put(text)
+                return len(text)
+
+            def flush(self) -> None:
+                pass
+
+        writer = _QueueWriter(self._log_queue)
         exit_code = 1
         try:
-            with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
+            with contextlib.redirect_stdout(writer), contextlib.redirect_stderr(writer):
                 exit_code = run_pipeline(args)
         except Exception as exc:  # noqa: BLE001 - surface to user
-            buffer.write(f"ERROR: {exc}\n")
+            self._log_queue.put(f"ERROR: {exc}\n")
         finally:
-            self._log_queue.put(buffer.getvalue())
             self._log_queue.put("__DONE__" if exit_code == 0 else "__FAILED__")
 
     def _poll_log_queue(self) -> None:
