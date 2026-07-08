@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import argparse
 import sys
-from pathlib import Path
 
 from lecture_splitter.audio_analyzer import analyze_audio
 from lecture_splitter.config import AppConfig, load_config, write_config_template
@@ -44,19 +43,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def _resolve_copy_mode(input_path: str, args: argparse.Namespace, config: AppConfig) -> bool:
     if args.copy:
-        selected = True
+        return True
     elif args.accurate:
-        selected = False
-    else:
-        selected = config.split.default_copy_mode
-
-    if Path(input_path).suffix.lower() == ".webm" and selected:
-        print(
-            "INFO: WEBM input detected; forcing --accurate mode to avoid codec/container copy mismatch.",
-            file=sys.stderr,
-        )
         return False
-    return selected
+    return config.split.default_copy_mode
 
 
 def _print_summary(duration_sec: float, breaks, lessons) -> None:

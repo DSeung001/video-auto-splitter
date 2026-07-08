@@ -7,6 +7,19 @@ from lecture_splitter.config import VideoConfig
 from lecture_splitter.utils import Interval, VideoPoint, clamp
 
 
+def _resize_for_diff(frame: np.ndarray, short_side: int) -> np.ndarray:
+    if short_side <= 0:
+        return frame
+    height, width = frame.shape[:2]
+    current_short = min(height, width)
+    if current_short <= short_side:
+        return frame
+    scale = short_side / float(current_short)
+    resized_w = max(1, int(round(width * scale)))
+    resized_h = max(1, int(round(height * scale)))
+    return cv2.resize(frame, (resized_w, resized_h), interpolation=cv2.INTER_AREA)
+
+
 def analyze_video(input_path: str, config: VideoConfig) -> list[VideoPoint]:
     capture = cv2.VideoCapture(input_path)
     if not capture.isOpened():
@@ -30,6 +43,7 @@ def analyze_video(input_path: str, config: VideoConfig) -> list[VideoPoint]:
         if not ok or frame is None:
             break
 
+        frame = _resize_for_diff(frame, config.diff_resize_short_side)
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         if prev_gray is None:
             diff_value = 0.0
@@ -72,4 +86,3 @@ def detect_static_intervals(points: list[VideoPoint], config: VideoConfig) -> li
         intervals.append(Interval(start_sec=start, end_sec=previous_time))
 
     return [i for i in intervals if i.duration_sec >= config.min_static_duration_sec]
-

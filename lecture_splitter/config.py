@@ -25,6 +25,7 @@ class VideoConfig:
     static_diff_threshold: float
     static_score_threshold: float
     min_static_duration_sec: float
+    diff_resize_short_side: int
 
 
 @dataclass(frozen=True)
@@ -79,6 +80,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "static_diff_threshold": 4.0,
         "static_score_threshold": 0.65,
         "min_static_duration_sec": 120.0,
+        "diff_resize_short_side": 480,
     },
     "break_detection": {
         "min_break_duration_sec": 180.0,
@@ -96,9 +98,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "break_score_threshold": 0.65,
     },
     "split": {
-        "default_copy_mode": False,
+        "default_copy_mode": True,
         "verify_output_with_ffprobe": True,
-        "verify_decode_with_ffmpeg": True,
+        "verify_decode_with_ffmpeg": False,
         "min_valid_duration_sec": 1.0,
     },
 }

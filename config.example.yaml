@@ -13,6 +13,7 @@ video:
   static_diff_threshold: 4.0
   static_score_threshold: 0.65
   min_static_duration_sec: 120.0
+  diff_resize_short_side: 480
 
 break_detection:
   min_break_duration_sec: 180.0
@@ -30,8 +31,8 @@ scoring:
   break_score_threshold: 0.65
 
 split:
-  # Safer default to avoid boundary corruption and codec/container mismatch.
-  default_copy_mode: false
+  # Speed-first default. WEBM copy failures are retried in accurate mode.
+  default_copy_mode: true
   verify_output_with_ffprobe: true
-  verify_decode_with_ffmpeg: true
+  verify_decode_with_ffmpeg: false
   min_valid_duration_sec: 1.0
