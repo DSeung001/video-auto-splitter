@@ -1,0 +1,2 @@
+"""Lecture auto splitter package."""
+
