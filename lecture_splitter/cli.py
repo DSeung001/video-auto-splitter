@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from lecture_splitter.audio_analyzer import analyze_audio
 from lecture_splitter.config import AppConfig, load_config, write_config_template
@@ -35,6 +36,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Preset to use with --init-config",
     )
     parser.add_argument("--force", action="store_true", help="Overwrite existing config with --init-config")
+    parser.add_argument("--gui", action="store_true", help="Launch the settings/run GUI instead of the CLI pipeline")
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument("--copy", action="store_true", help="Split with stream copy mode")
     mode_group.add_argument("--accurate", action="store_true", help="Split with re-encode mode")
@@ -65,13 +67,22 @@ def _print_summary(duration_sec: float, breaks, lessons) -> None:
 
 
 def run_pipeline(args: argparse.Namespace) -> int:
+    if getattr(args, "gui", False):
+        from lecture_splitter.gui import launch
+
+        return launch()
+
     if args.init_config:
         written_path = write_config_template(args.init_config, preset=args.config_preset, overwrite=args.force)
         print(f"Wrote config template: {written_path}")
         return 0
 
     if not args.input_path:
-        raise ValueError("input_path is required unless --init-config is used.")
+        # No input file and no explicit action: fall back to the GUI so the
+        # tool is usable without memorizing CLI flags.
+        from lecture_splitter.gui import launch
+
+        return launch()
 
     ensure_supported_input(args.input_path)
     config = load_config(args.config)
