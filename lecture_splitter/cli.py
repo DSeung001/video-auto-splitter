@@ -84,23 +84,33 @@ def run_pipeline(args: argparse.Namespace) -> int:
 
         return launch()
 
+    print(f"[1/7] Validating input: {args.input_path}")
     ensure_supported_input(args.input_path)
+    print("[2/7] Loading configuration")
     config = load_config(args.config)
     copy_mode = _resolve_copy_mode(args.input_path, args, config)
 
+    print("[3/7] Analyzing media (duration, audio, video)")
     duration_sec = get_video_duration(args.input_path)
     audio_points = analyze_audio(args.input_path, config.audio)
     video_points = analyze_video(args.input_path, config.video)
+
+    print("[4/7] Detecting breaks and building lesson segments")
     breaks = detect_breaks(audio_points, video_points, config.break_detection, config.scoring)
     lessons = build_lesson_segments(duration_sec, breaks, config.break_detection)
 
+    print("[5/7] Printing detection summary")
     _print_summary(duration_sec, breaks, lessons)
     if args.dry_run:
+        print("Dry-run requested; skipping file split.")
         return 0
 
     default_output = Path("output") / Path(args.input_path).stem
+    print("[6/7] Preparing output directory")
     output_dir = ensure_dir(args.output or default_output)
 
+    split_mode = "copy" if copy_mode else "accurate"
+    print(f"[7/7] Splitting lessons (mode: {split_mode})")
     split_lessons(
         input_path=args.input_path,
         lessons=lessons,
@@ -110,6 +120,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
         verify_decode_with_ffmpeg=config.split.verify_decode_with_ffmpeg,
         min_valid_duration_sec=config.split.min_valid_duration_sec,
     )
+    print("Writing segment reports (CSV/JSON)")
     write_segments_csv(str(output_dir / "segments.csv"), breaks, lessons)
     write_segments_json(str(output_dir / "segments.json"), breaks, lessons)
     print(f"Wrote outputs to: {output_dir}")
