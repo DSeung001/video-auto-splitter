@@ -14,7 +14,12 @@ Jitsi 강의 녹화 파일(`.mp4`, `.webm`)을 입력받아 쉬는 시간 후보
 - Python 3.11+
 - `ffmpeg`, `ffprobe` (PATH 등록)
 
-## 빠른 시작 (소스 실행)
+## 사용 방법 (2가지)
+
+1. **코드 받아서 실행(개발/수정 가능)**: 저장소를 clone 후 Python 환경에서 실행
+2. **실행파일 바로 다운로드(빠른 사용)**: GitHub Actions 아티팩트 다운로드 후 바로 실행
+
+## 방법 1) 코드 받아서 실행
 
 ```bash
 python3 -m venv .venv
@@ -109,13 +114,17 @@ python auto_split.py --init-config config.yaml --force
 ./dist/lecture-auto-splitter-gui
 ```
 
-## 다운로드해서 실행하기 (GitHub Actions 아티팩트)
+## 방법 2) 실행파일 다운로드 후 바로 실행 (GitHub Actions 아티팩트)
 
 `.github/workflows/build-binaries.yml`가 포함되어 있습니다.
 
-1. GitHub에서 **Actions → Build Binaries** 실행(또는 `v*` 태그 푸시)
-2. OS별 아티팩트 다운로드
-3. 압축 해제 후 실행 파일과 `config.example.yaml` 확인
+1. GitHub 저장소에서 **Actions** 탭으로 이동
+2. 왼쪽 워크플로우 목록에서 **Build Binaries** 선택
+3. 최신 성공 실행(run) 클릭
+4. 페이지 하단 **Artifacts**에서 OS에 맞는 파일 다운로드
+5. 압축 해제 후 실행 파일과 `config.example.yaml` 확인
+
+> 아티팩트가 없다면: **Run workflow** 버튼으로 수동 실행하거나, `v*` 태그 푸시로 빌드를 트리거하세요.
 
 실행 예시:
 

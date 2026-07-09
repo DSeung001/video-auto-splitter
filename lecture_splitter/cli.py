@@ -119,6 +119,7 @@ def run_pipeline(args: argparse.Namespace) -> int:
         verify_output_with_ffprobe=config.split.verify_output_with_ffprobe,
         verify_decode_with_ffmpeg=config.split.verify_decode_with_ffmpeg,
         min_valid_duration_sec=config.split.min_valid_duration_sec,
+        progress_callback=lambda msg: print(f"  {msg}"),
     )
     print("Writing segment reports (CSV/JSON)")
     write_segments_csv(str(output_dir / "segments.csv"), breaks, lessons)
