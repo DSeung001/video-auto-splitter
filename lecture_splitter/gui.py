@@ -18,6 +18,7 @@ from types import SimpleNamespace
 
 from lecture_splitter.cli import run_pipeline
 from lecture_splitter.config import AppConfig, load_config, save_config
+from lecture_splitter.optimizer import AudioOptimizationResult, optimize_audio_config
 
 # (label, config section attr, field attr, cast)
 FIELD_SPECS: list[tuple[str, str, str, type]] = [
@@ -43,6 +44,7 @@ class LectureSplitterGUI:
         self._field_vars: dict[str, tk.StringVar] = {}
         self._log_queue: "queue.Queue[str]" = queue.Queue()
         self._running = False
+        self._optimizing = False
 
         self.input_var = tk.StringVar()
         self.output_var = tk.StringVar()
@@ -97,7 +99,11 @@ class LectureSplitterGUI:
         ttk.Button(settings_buttons, text="선택한 Config 불러오기", command=self._load_config_into_fields).pack(
             side="left", padx=(0, 6)
         )
-        ttk.Button(settings_buttons, text="설정 저장", command=self._save_settings).pack(side="left")
+        ttk.Button(settings_buttons, text="설정 저장", command=self._save_settings).pack(side="left", padx=(0, 6))
+        self.optimize_button = ttk.Button(
+            settings_buttons, text="설정 최적화 (입력 오디오 분석)", command=self._on_optimize_clicked
+        )
+        self.optimize_button.pack(side="left")
 
         run_frame = ttk.Frame(self.root)
         run_frame.pack(fill="x", **pad)
@@ -189,9 +195,76 @@ class LectureSplitterGUI:
             return
         messagebox.showinfo("완료", f"Config를 저장했습니다: {config_path}")
 
+    # ---------- audio optimization ----------
+    def _on_optimize_clicked(self) -> None:
+        if self._optimizing or self._running:
+            return
+        input_path = self.input_var.get().strip()
+        if not input_path:
+            messagebox.showwarning("경고", "먼저 입력 파일을 선택하세요.")
+            return
+
+        try:
+            config = self._collect_config_from_fields()
+        except ValueError as exc:
+            messagebox.showerror("입력 오류", f"설정값 입력이 올바르지 않습니다:\n{exc}")
+            return
+
+        self._set_optimizing(True)
+        thread = threading.Thread(target=self._run_optimize_thread, args=(input_path, config), daemon=True)
+        thread.start()
+
+    def _run_optimize_thread(self, input_path: str, config: AppConfig) -> None:
+        try:
+            result = optimize_audio_config(input_path, config.audio)
+        except Exception as exc:  # noqa: BLE001 - surface to user
+            self.root.after(0, self._on_optimize_failed, exc)
+            return
+        self.root.after(0, self._on_optimize_done, result)
+
+    def _on_optimize_done(self, result: AudioOptimizationResult) -> None:
+        from dataclasses import replace
+
+        self._set_optimizing(False)
+        self._config = replace(self._config, audio=result.config)
+        for key, var in self._field_vars.items():
+            section, attr = key.split(".")
+            if section != "audio":
+                continue
+            var.set(str(getattr(result.config, attr)))
+
+        messagebox.showinfo(
+            "설정 최적화 완료",
+            (
+                f"쉬는 시간(추정) 평균 음량: {result.quiet_mean_db:.1f} dB\n"
+                f"강의 중(추정) 평균 음량: {result.active_mean_db:.1f} dB\n"
+                f"구분 기준(임계값): {result.threshold_db:.1f} dB\n"
+                f"조용한 구간 비율: {result.quiet_ratio * 100:.1f}%\n"
+                f"분석 샘플 수: {result.sample_count}\n\n"
+                f"적용된 값:\n"
+                f"  무음 임계값 (absolute_quiet_db): {result.config.absolute_quiet_db}\n"
+                f"  무음 상대 하락폭 (relative_drop_db): {result.config.relative_drop_db}\n"
+                f"  무음 점수 임계값 (quiet_score_threshold): {result.config.quiet_score_threshold}\n\n"
+                "'설정 저장'을 눌러야 config 파일에 반영됩니다."
+            ),
+        )
+
+    def _on_optimize_failed(self, exc: Exception) -> None:
+        self._set_optimizing(False)
+        messagebox.showerror("설정 최적화 실패", str(exc))
+
+    def _set_optimizing(self, optimizing: bool) -> None:
+        self._optimizing = optimizing
+        self.optimize_button.config(state="disabled" if optimizing else "normal")
+        self.run_button.config(state="disabled" if optimizing else "normal")
+        if optimizing:
+            self.status_label.config(text="오디오 분석 중...")
+        else:
+            self.status_label.config(text="대기 중")
+
     # ---------- run ----------
     def _on_run_clicked(self) -> None:
-        if self._running:
+        if self._running or self._optimizing:
             return
         input_path = self.input_var.get().strip()
         if not input_path:
@@ -293,6 +366,7 @@ class LectureSplitterGUI:
     def _set_running(self, running: bool) -> None:
         self._running = running
         self.run_button.config(state="disabled" if running else "normal")
+        self.optimize_button.config(state="disabled" if running else "normal")
         if running:
             self.status_label.config(text="실행 중...")
 
