@@ -124,7 +124,7 @@ python auto_split.py --init-config config.yaml --force
 4. 페이지 하단 **Artifacts**에서 OS에 맞는 파일 다운로드
 5. 압축 해제 후 실행 파일과 `config.example.yaml` 확인
 
-> 아티팩트가 없다면: **Run workflow** 버튼으로 수동 실행하거나, `v*` 태그 푸시로 빌드를 트리거하세요.
+> 아티팩트가 없다면: PR이 `main`에 병합된 뒤 run을 확인하거나, **Run workflow** 버튼으로 수동 실행하세요.
 
 실행 예시:
 
