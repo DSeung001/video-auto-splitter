@@ -8,6 +8,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -53,3 +56,19 @@ jobs:
         with:
           name: lecture-auto-splitter-${{ runner.os }}
           path: release/*
+
+      - name: Publish latest release assets (Windows)
+        if: runner.os == 'Windows' && github.ref == 'refs/heads/main'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: latest
+          name: Latest build (main)
+          allowUpdates: true
+          removeArtifacts: true
+          replacesArtifacts: true
+          makeLatest: true
+          body: Automated latest build from main branch.
+          artifacts: |
+            release/lecture-auto-splitter-Windows.exe
+            release/lecture-auto-splitter-gui-Windows.exe
+            release/config.example.yaml

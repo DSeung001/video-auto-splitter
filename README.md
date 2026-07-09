@@ -17,7 +17,7 @@ Jitsi 강의 녹화 파일(`.mp4`, `.webm`)을 입력받아 쉬는 시간 후보
 ## 사용 방법 (2가지)
 
 1. **코드 받아서 실행(개발/수정 가능)**: 저장소를 clone 후 Python 환경에서 실행
-2. **실행파일 바로 다운로드(빠른 사용)**: GitHub Actions 아티팩트 다운로드 후 바로 실행
+2. **실행파일 바로 다운로드(빠른 사용)**: GitHub Releases 최신 링크로 바로 실행
 
 ## 방법 1) 코드 받아서 실행
 
@@ -114,17 +114,17 @@ python auto_split.py --init-config config.yaml --force
 ./dist/lecture-auto-splitter-gui
 ```
 
-## 방법 2) 실행파일 다운로드 후 바로 실행 (GitHub Actions 아티팩트)
+## 방법 2) 실행파일 다운로드 후 바로 실행 (GitHub Releases 최신 링크)
 
-`.github/workflows/build-binaries.yml`가 포함되어 있습니다.
+`main`에 머지될 때마다 워크플로가 최신 릴리즈(`latest`)를 갱신합니다.
 
-1. GitHub 저장소에서 **Actions** 탭으로 이동
-2. 왼쪽 워크플로우 목록에서 **Build Binaries** 선택
-3. 최신 성공 실행(run) 클릭
-4. 페이지 하단 **Artifacts**에서 OS에 맞는 파일 다운로드
-5. 압축 해제 후 실행 파일과 `config.example.yaml` 확인
+고정 링크 (README에 항상 동일한 URL):
 
-> 아티팩트가 없다면: PR이 `main`에 병합된 뒤 run을 확인하거나, **Run workflow** 버튼으로 수동 실행하세요.
+- Windows CLI: [lecture-auto-splitter-Windows.exe](https://github.com/DSeung001/video-auto-splitter/releases/latest/download/lecture-auto-splitter-Windows.exe)
+- Windows GUI: [lecture-auto-splitter-gui-Windows.exe](https://github.com/DSeung001/video-auto-splitter/releases/latest/download/lecture-auto-splitter-gui-Windows.exe)
+- 기본 설정 파일: [config.example.yaml](https://github.com/DSeung001/video-auto-splitter/releases/latest/download/config.example.yaml)
+
+> `main` 머지 직후에는 릴리즈 갱신에 몇 분 정도 걸릴 수 있습니다. 필요하면 **Run workflow**로 수동 실행하세요.
 
 실행 예시:
 
