@@ -10,6 +10,7 @@ import contextlib
 import queue
 import tempfile
 import threading
+import traceback
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
@@ -269,6 +270,7 @@ class LectureSplitterGUI:
                 exit_code = run_pipeline(args)
         except Exception as exc:  # noqa: BLE001 - surface to user
             self._log_queue.put(f"ERROR: {exc}\n")
+            self._log_queue.put(traceback.format_exc())
         finally:
             self._log_queue.put("__DONE__" if exit_code == 0 else "__FAILED__")
 

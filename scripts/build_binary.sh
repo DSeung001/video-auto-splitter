@@ -12,4 +12,13 @@ python3 -m PyInstaller \
   --name lecture-auto-splitter \
   auto_split.py
 
+python3 -m PyInstaller \
+  --noconfirm \
+  --clean \
+  --onefile \
+  --windowed \
+  --name lecture-auto-splitter-gui \
+  auto_split_gui.py
+
 echo "Built executable: $ROOT_DIR/dist/lecture-auto-splitter"
+echo "Built executable: $ROOT_DIR/dist/lecture-auto-splitter-gui"

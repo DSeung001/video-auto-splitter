@@ -24,14 +24,17 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r requirements.txt -r requirements-build.txt
 
-      - name: Build executable
-        run: python -m PyInstaller --noconfirm --clean --onefile --name lecture-auto-splitter auto_split.py
+      - name: Build executables
+        run: |
+          python -m PyInstaller --noconfirm --clean --onefile --name lecture-auto-splitter auto_split.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name lecture-auto-splitter-gui auto_split_gui.py
 
       - name: Package artifact (Unix)
         if: runner.os != 'Windows'
         run: |
           mkdir -p release
           cp dist/lecture-auto-splitter release/lecture-auto-splitter-${{ runner.os }}
+          cp dist/lecture-auto-splitter-gui release/lecture-auto-splitter-gui-${{ runner.os }}
           cp config.example.yaml release/config.example.yaml
 
       - name: Package artifact (Windows)
@@ -40,6 +43,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force release | Out-Null
           Copy-Item dist/lecture-auto-splitter.exe release/lecture-auto-splitter-Windows.exe
+          Copy-Item dist/lecture-auto-splitter-gui.exe release/lecture-auto-splitter-gui-Windows.exe
           Copy-Item config.example.yaml release/config.example.yaml
 
       - name: Upload artifacts

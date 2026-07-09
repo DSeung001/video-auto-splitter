@@ -95,7 +95,9 @@ python auto_split.py --init-config config.yaml --force
 빌드 결과:
 
 - macOS/Linux: `dist/lecture-auto-splitter`
+- macOS/Linux (GUI 전용): `dist/lecture-auto-splitter-gui`
 - Windows(워크플로우): `dist/lecture-auto-splitter.exe`
+- Windows(워크플로우, GUI 전용): `dist/lecture-auto-splitter-gui.exe`
 
 실행 예시:
 
@@ -103,6 +105,8 @@ python auto_split.py --init-config config.yaml --force
 ./dist/lecture-auto-splitter --init-config
 ./dist/lecture-auto-splitter input/sample.webm --config config.yaml --dry-run
 ./dist/lecture-auto-splitter --gui
+# GUI를 바로 실행하려면 (옵션 없이 실행)
+./dist/lecture-auto-splitter-gui
 ```
 
 ## 다운로드해서 실행하기 (GitHub Actions 아티팩트)
@@ -118,6 +122,8 @@ python auto_split.py --init-config config.yaml --force
 ```bash
 ./lecture-auto-splitter --init-config
 ./lecture-auto-splitter input/sample.mp4 --config config.yaml --output output/run1
+# GUI를 바로 실행하려면
+./lecture-auto-splitter-gui
 ```
 
 Windows:
@@ -125,6 +131,8 @@ Windows:
 ```powershell
 .\lecture-auto-splitter-Windows.exe --init-config
 .\lecture-auto-splitter-Windows.exe input\sample.webm --config config.yaml --dry-run
+# GUI를 바로 실행하려면
+.\lecture-auto-splitter-gui-Windows.exe
 ```
 
 ## 주요 옵션
