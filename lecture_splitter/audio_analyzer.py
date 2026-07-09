@@ -17,7 +17,13 @@ def _rms_to_db(rms_value: float) -> float:
     return 20.0 * math.log10(rms_value)
 
 
-def analyze_audio(input_path: str, config: AudioConfig) -> list[AudioPoint]:
+def extract_db_timeline(input_path: str, config: AudioConfig) -> list[tuple[float, float]]:
+    """Extract a (time_sec, db) timeline for the input's audio track.
+
+    This is the shared first stage used both by `analyze_audio()` (which
+    turns dB values into quiet scores) and by the settings optimizer (which
+    inspects the raw dB distribution to auto-tune thresholds).
+    """
     temp_pcm = tempfile.NamedTemporaryFile(prefix="lecture-splitter-", suffix=".pcm", delete=False)
     temp_pcm_path = Path(temp_pcm.name)
     temp_pcm.close()
@@ -45,22 +51,28 @@ def analyze_audio(input_path: str, config: AudioConfig) -> list[AudioPoint]:
         if not points_raw:
             raise RuntimeError("Unable to build audio timeline points.")
 
-        db_values = np.array([db for _, db in points_raw], dtype=np.float32)
-        baseline_db = float(np.percentile(db_values, 70))
-
-        analyzed: list[AudioPoint] = []
-        for time_sec, db_value in points_raw:
-            absolute_score = clamp(
-                (config.absolute_quiet_db + config.absolute_margin_db - db_value) / max(config.absolute_margin_db, 1e-6)
-            )
-            relative_drop = baseline_db - db_value
-            relative_score = clamp(relative_drop / max(config.relative_drop_db, 1e-6))
-            quiet_score = max(absolute_score, relative_score)
-            analyzed.append(AudioPoint(time_sec=time_sec, db=db_value, quiet_score=quiet_score))
-
-        return analyzed
+        return points_raw
     finally:
         temp_pcm_path.unlink(missing_ok=True)
+
+
+def analyze_audio(input_path: str, config: AudioConfig) -> list[AudioPoint]:
+    points_raw = extract_db_timeline(input_path, config)
+
+    db_values = np.array([db for _, db in points_raw], dtype=np.float32)
+    baseline_db = float(np.percentile(db_values, 70))
+
+    analyzed: list[AudioPoint] = []
+    for time_sec, db_value in points_raw:
+        absolute_score = clamp(
+            (config.absolute_quiet_db + config.absolute_margin_db - db_value) / max(config.absolute_margin_db, 1e-6)
+        )
+        relative_drop = baseline_db - db_value
+        relative_score = clamp(relative_drop / max(config.relative_drop_db, 1e-6))
+        quiet_score = max(absolute_score, relative_score)
+        analyzed.append(AudioPoint(time_sec=time_sec, db=db_value, quiet_score=quiet_score))
+
+    return analyzed
 
 
 def detect_quiet_intervals(points: list[AudioPoint], config: AudioConfig) -> list[Interval]:
