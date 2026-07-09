@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Callable
 
 from lecture_splitter.ffmpeg import split_video, validate_media_file
 from lecture_splitter.utils import LessonSegment, ensure_dir
@@ -15,18 +16,25 @@ def split_lessons(
     verify_output_with_ffprobe: bool,
     verify_decode_with_ffmpeg: bool,
     min_valid_duration_sec: float,
+    progress_callback: Callable[[str], None] | None = None,
 ) -> list[LessonSegment]:
+    def _emit(message: str) -> None:
+        if progress_callback is not None:
+            progress_callback(message)
+
     ensure_dir(output_dir)
     output_path = Path(output_dir)
+    total_lessons = len(lessons)
 
     created: list[LessonSegment] = []
     is_webm_input = Path(input_path).suffix.lower() == ".webm"
-    for lesson in lessons:
+    for lesson_idx, lesson in enumerate(lessons, start=1):
         final_file = output_path / lesson.output_file
         temp_file = output_path / f".{final_file.stem}.tmp{final_file.suffix}"
         if temp_file.exists():
             temp_file.unlink()
 
+        _emit(f"Splitting lesson {lesson_idx}/{total_lessons}: {lesson.output_file}")
         try:
             _split_and_validate(
                 input_path=input_path,
@@ -44,6 +52,7 @@ def split_lessons(
             if not (is_webm_input and copy_mode):
                 raise
 
+            _emit(f"Copy split failed for lesson {lesson_idx}; retrying with accurate mode")
             try:
                 _split_and_validate(
                     input_path=input_path,
@@ -62,6 +71,8 @@ def split_lessons(
 
         temp_file.replace(final_file)
         created.append(lesson)
+        progress_percent = int((lesson_idx / total_lessons) * 100) if total_lessons > 0 else 100
+        _emit(f"Split progress: {progress_percent}% ({lesson_idx}/{total_lessons})")
 
     return created
 
